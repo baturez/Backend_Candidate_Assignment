@@ -7,6 +7,9 @@ from sqlalchemy.orm import Session
 from . import models, schemas, crud, auth
 from .database import engine
 from .deps import get_db, get_current_user
+import threading
+from app.workers import worker_loop
+import uvicorn
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Notes Summarizer (MSSQL + FastAPI)")
@@ -49,3 +52,12 @@ def get_note(note_id:int, db: Session = Depends(get_db), current_user: models.Us
         raise HTTPException(status_code=403, detail="Not Allowed!")
     return note
 
+def start_worker():
+    t = threading.Thread(target=worker_loop, daemon=True)
+    t.start()
+
+if __name__ == "__main__":
+    # Start background worker in separate thread
+    start_worker()
+    # Run API
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000)
