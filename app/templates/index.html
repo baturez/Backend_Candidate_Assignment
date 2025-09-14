@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Notes Summarizer - Mobile Style</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1c2b, #232946);
+    overflow: hidden;
+  }
+  ::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.4s forwards; }
+    .fade-out { animation: fadeOut 0.4s forwards; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    .note-header {
+      cursor: pointer;
+      padding: 10px;
+      background: #35384f;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s;
+    }
+    .note-header:hover {
+      background: #41445b;
+    }
+
+    .note-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 10px;
+      margin-bottom: 10px;
+    }
+
+    .note-body.open {
+      padding: 10px;
+    }
+  .phone {
+    width: 360px;
+    height: 640px;
+    background: #1f2235;
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .header {
+    flex-shrink: 0;
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #f5f6fa;
+    background: linear-gradient(135deg, #3a0ca3, #4361ee); /* daha koyu mor-mavi */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    z-index: 2;
+  }
+
+  .screen {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    color: #e0e0e0; /* açık gri yazılar */
+  }
+
+  .hidden { display: none !important; }
+
+  h2 {
+    color: #f5f6fa;
+    margin-bottom: 20px;
+  }
+
+  input, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #2a2d43; /* koyu input alanı */
+    color: #f1f1f1;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+    box-sizing: border-box;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #999;
+  }
+
+  input:focus, textarea:focus {
+    outline: none;
+    background: #35384f;
+    box-shadow: 0 0 8px rgba(67,97,238,0.6);
+    transform: scale(1.02);
+  }
+
+  textarea { min-height: 80px; resize: vertical; }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4361ee, #3a0ca3); /* koyu mavi-mor */
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 10px;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(67,97,238,0.4);
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  .logout-btn {
+    background: linear-gradient(135deg, #ef233c, #d90429); /* kırmızı logout */
+  }
+
+  .msg {
+    color: #ef476f;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+  }
+
+  .note {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: #2a2d43;
+    color: #f1f1f1;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    word-wrap: break-word;
+  }
+
+  .modal {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-content {
+    background: #1f2235;
+    color: #f1f1f1;
+    width: 90%;
+    height: 90%;
+    border-radius: 20px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+  }
+
+  a {
+    color: #89a1f5;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+</head>
+<body>
+  <div class="phone">
+  <div class="header">📱 Notes Summarizer</div>
+
+  <!-- Login Screen -->
+  <div class="screen" id="login-screen">
+    <h2 style="text-align:center;">Login</h2>
+    <form onsubmit="login(); return false;">
+      <input type="email" id="login-email" placeholder="Email" required>
+      <input type="password" id="login-password" placeholder="Password" required>
+      <button type="submit" style="background: linear-gradient(135deg,#2575fc,#6a11cb);">Login</button>
+    </form>
+    <p class="msg" id="login-msg"></p>
+    <p style="text-align:center; font-size:0.9rem;">
+      No account? <a href="#" onclick="showSignup()">Create one</a>
+    </p>
+  </div>
+
+  <!-- Signup Screen -->
+  <div class="screen hidden" id="signup-screen">
+    <h2 style="text-align:center;">Create Account</h2>
+    <form onsubmit="signup(); return false;">
+      <input type="email" id="signup-email" placeholder="Email" required>
+      <input type="password" id="signup-password" placeholder="Password" required minlength="6">
+      <button type="submit">Signup</button>
+    </form>
+    <p class="msg" id="signup-msg"></p>
+    <p style="text-align:center; font-size:0.9rem;">
+      Already have an account? <a href="#" onclick="showLogin()">Login</a>
+    </p>
+  </div>
+
+  <!-- Notes Modal -->
+  <div class="modal hidden" id="notes-modal">
+    <div class="modal-content">
+      <h2>✍️ Create Note</h2>
+      <textarea id="note-text" placeholder="Enter note text"></textarea>
+      <button onclick="createNote()">Create Note</button>
+      <p class="msg" id="note-msg"></p>
+
+      <h2>Your Notes</h2>
+      <div id="notes-list"></div>
+
+      <h2>Find Note by ID</h2>
+      <input type="number" id="note-id" placeholder="Note ID">
+      <button onclick="getNote()">Get Note</button>
+      <div id="note-detail"></div>
+
+      <hr style="margin:20px 0; border:none; border-top:1px solid #ddd;">
+
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+let token = '';
+
+const signupEmail = document.getElementById('signup-email');
+const signupPassword = document.getElementById('signup-password');
+const signupMsg = document.getElementById('signup-msg');
+const loginEmail = document.getElementById('login-email');
+const loginPassword = document.getElementById('login-password');
+const loginMsg = document.getElementById('login-msg');
+const noteText = document.getElementById('note-text');
+const noteMsg = document.getElementById('note-msg');
+const notesList = document.getElementById('notes-list');
+const noteId = document.getElementById('note-id');
+const noteDetail = document.getElementById('note-detail');
+
+const notesModal = document.getElementById('notes-modal');
+const loginScreen = document.getElementById('login-screen');
+const signupScreen = document.getElementById('signup-screen');
+
+function showSignup() {
+  loginScreen.classList.add("fade-out");
+  setTimeout(() => {
+    loginScreen.classList.add("hidden");
+    loginScreen.classList.remove("fade-out");
+    signupScreen.classList.remove("hidden");
+    signupScreen.classList.add("fade-in");
+    setTimeout(() => signupScreen.classList.remove("fade-in"), 400);
+  }, 400);
+}
+
+
+function showLogin() {
+  signupScreen.classList.add("fade-out");
+  setTimeout(() => {
+    signupScreen.classList.add("hidden");
+    signupScreen.classList.remove("fade-out");
+    loginScreen.classList.remove("hidden");
+    loginScreen.classList.add("fade-in");
+    setTimeout(() => loginScreen.classList.remove("fade-in"), 400);
+  }, 400);
+}
+
+
+function showNotes() {
+  loginScreen.classList.add("hidden");
+  signupScreen.classList.add("hidden");
+  notesModal.classList.remove("hidden");
+  notesModal.style.display = "flex";
+}
+
+function logout() {
+  token = '';
+  notesModal.classList.add("hidden");
+  notesModal.style.display = "none";
+  loginScreen.classList.remove("hidden");
+  loginMsg.innerText = '';
+  signupMsg.innerText = '';
+}
+
+async function api(url, method='GET', body=null, auth=false) {
+  const headers = { 'Content-Type': 'application/json' };
+  if(auth) headers['Authorization'] = 'Bearer ' + token;
+
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+
+async function signup() {
+  try {
+    const data = await api('/signup', 'POST', {
+      email: signupEmail.value,
+      password: signupPassword.value,
+      role: "AGENT"
+    });
+    signupMsg.innerText = "Signup successful! You can login now.";
+    showLogin();
+  } catch(err) {
+    signupMsg.innerText = err.message;
+  }
+}
+
+async function login() {
+  try {
+    const data = await api('/login', 'POST', {
+      email: loginEmail.value,
+      password: loginPassword.value
+    });
+    token = data.access_token;
+    loginMsg.innerText = "Login successful!";
+    showNotes();
+    listNotes();
+  } catch(err) {
+    loginMsg.innerText = err.message;
+  }
+}
+
+function renderStatus(status) {
+  switch(status) {
+    case "queued": return `<span style="color: gray;">⏳ Queued</span>`;
+    case "processing": return `<span style="color: orange;">⚙️ Processing</span>`;
+    case "done": return `<span style="color: green;">✅ Done</span>`;
+    case "failed": return `<span style="color: red;">❌ Failed</span>`;
+    default: return status;
+  }
+}
+
+async function createNote() {
+  try {
+    const body = { raw_text: noteText.value };
+    const data = await api('/notes', 'POST', body, true);
+    noteText.value = '';
+    noteMsg.innerText = "Note queued!";
+    pollNote(data.id);
+    listNotes();
+  } catch(err) {
+    noteMsg.innerText = err.message;
+  }
+}
+
+async function pollNote(noteId) {
+  const container = document.getElementById('note-detail');
+  let done = false;
+  while(!done) {
+    try {
+      const note = await api(`/notes/${noteId}`, "GET", null, true);
+      container.innerHTML = `
+        <b>ID:</b> ${note.id}<br>
+        <b>Text:</b> ${note.raw_text}<br>
+        <b>Summary:</b> ${note.summary || '(processing...)'}<br>
+        <b>Status:</b> ${renderStatus(note.status)}<br>
+        <b>Retries:</b> ${note.retries}/${note.max_retries}<br>
+        <b>Created At:</b> ${new Date(note.created_at).toLocaleString()}<br>
+        <b>Updated At:</b> ${new Date(note.updated_at).toLocaleString()}
+      `;
+      if(note.status === "done" || note.status === "failed") done = true;
+      else await new Promise(r => setTimeout(r, 2000));
+    } catch(err) {
+      container.innerText = err.message;
+      done = true;
+    }
+  }
+}
+
+async function listNotes() {
+  try {
+    const data = await api('/notes', 'GET', null, true);
+    notesList.innerHTML = '';
+    data.forEach(note => {
+      const noteDiv = document.createElement('div');
+      noteDiv.className = 'note';
+
+      const header = document.createElement('div');
+      header.className = 'note-header';
+      header.innerHTML = `<span>ID: ${note.id}</span><span>▼</span>`;
+
+      const body = document.createElement('div');
+      body.className = 'note-body';
+      body.innerHTML = `
+        <b>Text:</b> ${note.raw_text}<br>
+        <b>Summary:</b> ${note.summary || '(processing...)'}<br>
+        <b>Status:</b> ${renderStatus(note.status)}<br>
+        <b>Retries:</b> ${note.retries}/${note.max_retries}<br>
+        <b>Created At:</b> ${new Date(note.created_at).toLocaleString()}<br>
+        <b>Updated At:</b> ${new Date(note.updated_at).toLocaleString()}
+      `;
+
+      header.addEventListener('click', () => {
+        body.classList.toggle('open');
+        if(body.classList.contains('open')) {
+          body.style.maxHeight = body.scrollHeight + 'px';
+        } else {
+          body.style.maxHeight = 0;
+        }
+      });
+
+      noteDiv.appendChild(header);
+      noteDiv.appendChild(body);
+      notesList.appendChild(noteDiv);
+    });
+  } catch(err) { notesList.innerText = err.message; }
+}
+
+async function getNote() {
+  try {
+    const id = noteId.value;
+    if(!id) return;
+    pollNote(id);
+  } catch(err) {
+    noteDetail.innerText = err.message;
+  }
+}
+
+</script>
+</body>
+</html>
